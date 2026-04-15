@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pedigree Risk Studio</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="hero">
+        <div class="brand">Pedigree Risk Studio</div>
+        <h1>Vẽ phả hệ, thêm từng đời, và tính rủi ro di truyền ngay trên web.</h1>
+        <p>
+          Mặc định có người cần xét và các node liên quan. Nhãn đời được đánh số tự động theo bố cục chiều cao của phả hệ,
+          bạn có thể bấm thêm đời để nhập ông bà, cô dì, chú bác,
+          rồi chạy suy luận autosomal recessive ngay lập tức.
+        </p>
+        <div class="hero-cards">
+          <div class="hero-card">
+            <span class="label">Mặc định</span>
+            <strong>Proband + Father + Mother</strong>
+            <small>Các đời hiển thị theo số thứ tự tự động</small>
+          </div>
+          <div class="hero-card">
+            <span class="label">Mở rộng</span>
+            <strong>+ 1 đời</strong>
+            <small>Thêm ông bà hoặc các node cùng thế hệ</small>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <h2>Pedigree Builder</h2>
+            <p>Điền thông tin, thêm đời nếu cần, rồi bấm tính xác suất.</p>
+          </div>
+          <div class="actions">
+            <button id="addGenerationBtn" class="secondary">+ Thêm 1 đời</button>
+            <button id="exampleBtn" class="ghost">Nạp ví dụ</button>
+            <button id="inferBtn" class="primary">Tính rủi ro</button>
+          </div>
+        </header>
+
+        <section class="controls">
+          <label>
+            Kiểu di truyền
+            <select id="inheritanceMode">
+              <option value="auto" selected>Tự suy ra từ phả hệ</option>
+              <option value="recessive">Lặn (recessive)</option>
+              <option value="dominant">Trội (dominant)</option>
+            </select>
+          </label>
+          <label>
+            Allele frequency
+            <div class="inline-control">
+              <select id="alleleMode">
+                <option value="preset" selected>preset</option>
+                <option value="custom">custom</option>
+                <option value="unknown">unknown</option>
+              </select>
+              <select id="allelePreset" style="display:block">
+                <option value="0.01">rare (q=0.01)</option>
+                <option value="0.05">moderate (q=0.05)</option>
+                <option value="0.1">common (q=0.1)</option>
+              </select>
+              <input id="alleleFrequency" type="number" min="0.000001" max="0.999999" step="0.0001" value="0.01" style="display:none" />
+            </div>
+          </label>
+          <label>
+            Query father
+            <select id="queryFather"></select>
+          </label>
+          <label>
+            Query mother
+            <select id="queryMother"></select>
+          </label>
+        </section>
+
+        <section id="statusBar" class="status">Sẵn sàng. Nhập cây gia đình và bấm Tính rủi ro.</section>
+
+        <section class="panel pedigree-panel">
+          <div class="panel-head">
+            <h3>Phả hệ trực quan</h3>
+            <span>Xem nhanh các đời và quan hệ cha/mẹ-con</span>
+          </div>
+          <div id="pedigreeCanvas" class="pedigree-canvas">
+            <div class="empty-state">Sơ đồ phả hệ sẽ tự cập nhật khi bạn nhập dữ liệu.</div>
+          </div>
+        </section>
+
+        <section id="generations" class="generations"></section>
+
+        <section class="results-grid">
+          <article class="panel result-panel">
+            <div class="panel-head">
+              <h3>Kết quả</h3>
+              <span id="resultBadge" class="badge neutral">Chưa chạy</span>
+            </div>
+            <div id="resultBody" class="result-body">
+              <div class="empty-state">Kết quả sẽ hiển thị ở đây sau khi bạn chạy inference.</div>
+            </div>
+          </article>
+
+          <article class="panel payload-panel">
+            <div class="panel-head">
+              <h3>Payload gửi API</h3>
+              <button id="copyPayloadBtn" class="ghost small">Copy JSON</button>
+            </div>
+            <pre id="payloadPreview" class="payload-preview">{}</pre>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <template id="generationTemplate">
+      <section class="generation-card">
+        <div class="generation-head">
+          <div>
+            <span class="generation-kicker">Đời</span>
+            <h3 class="generation-title"></h3>
+          </div>
+          <button class="ghost remove-generation-btn" type="button">Xóa đời</button>
+        </div>
+        <div class="node-list"></div>
+        <button class="secondary add-node-btn" type="button">+ Thêm node trong đời này</button>
+      </section>
+    </template>
+
+    <template id="nodeTemplate">
+      <article class="node-card">
+        <div class="node-topline">
+          <strong class="node-index"></strong>
+          <button class="ghost remove-node-btn" type="button">Xóa</button>
+        </div>
+        <label>
+          ID
+          <input class="node-id" type="text" placeholder="grandfather_paternal" />
+        </label>
+        <label>
+          Phenotype
+          <select class="node-phenotype">
+            <option value="unknown">unknown</option>
+            <option value="unaffected">unaffected</option>
+            <option value="affected">affected</option>
+          </select>
+        </label>
+        <label>
+          Father
+          <select class="node-father"></select>
+        </label>
+        <label>
+          Mother
+          <select class="node-mother"></select>
+        </label>
+      </article>
+    </template>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
