@@ -12,10 +12,14 @@ const inheritanceModeSelect = document.getElementById('inheritanceMode');
 const alleleModeSelect = document.getElementById('alleleMode');
 const allelePresetSelect = document.getElementById('allelePreset');
 const alleleFrequencyInput = document.getElementById('alleleFrequency');
+const apiBaseUrlInput = document.getElementById('apiBaseUrl');
+const saveApiBaseUrlBtn = document.getElementById('saveApiBaseUrlBtn');
 const queryFatherSelect = document.getElementById('queryFather');
 const queryMotherSelect = document.getElementById('queryMother');
 const generationTemplate = document.getElementById('generationTemplate');
 const nodeTemplate = document.getElementById('nodeTemplate');
+
+const API_BASE_URL_STORAGE_KEY = 'pedigree.apiBaseUrl';
 
 const state = {
   generations: []
@@ -513,6 +517,33 @@ function buildPayload() {
   };
 }
 
+function normalizeApiBaseUrl(value) {
+  return String(value || '').trim().replace(/\/+$/, '');
+}
+
+function isGithubPagesHost() {
+  return window.location.hostname.endsWith('github.io');
+}
+
+function getApiBaseUrl() {
+  const typed = normalizeApiBaseUrl(apiBaseUrlInput?.value);
+  if (typed) {
+    return typed;
+  }
+
+  const saved = normalizeApiBaseUrl(window.localStorage.getItem(API_BASE_URL_STORAGE_KEY));
+  if (saved) {
+    return saved;
+  }
+
+  return isGithubPagesHost() ? '' : window.location.origin;
+}
+
+function inferEndpoint() {
+  const base = getApiBaseUrl();
+  return base ? `${base}/v1/infer` : '/v1/infer';
+}
+
 
 function renderPayloadPreview() {
   payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
@@ -638,11 +669,16 @@ async function infer() {
     return;
   }
 
+  if (isGithubPagesHost() && !getApiBaseUrl()) {
+    setStatus('Hãy nhập API Base URL backend trước khi chạy trên GitHub Pages.', 'error');
+    return;
+  }
+
   setStatus('Đang gửi dữ liệu lên API...', 'neutral');
   inferBtn.disabled = true;
 
   try {
-    const response = await fetch('/v1/infer', {
+    const response = await fetch(inferEndpoint(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -689,9 +725,36 @@ alleleModeSelect.addEventListener('change', () => {
 inheritanceModeSelect.addEventListener('change', renderPayloadPreview);
 queryFatherSelect.addEventListener('change', renderPayloadPreview);
 queryMotherSelect.addEventListener('change', renderPayloadPreview);
+
+if (apiBaseUrlInput && saveApiBaseUrlBtn) {
+  const savedApiBase = normalizeApiBaseUrl(window.localStorage.getItem(API_BASE_URL_STORAGE_KEY));
+  if (savedApiBase) {
+    apiBaseUrlInput.value = savedApiBase;
+  } else if (!isGithubPagesHost()) {
+    apiBaseUrlInput.value = window.location.origin;
+  }
+
+  saveApiBaseUrlBtn.addEventListener('click', () => {
+    const normalized = normalizeApiBaseUrl(apiBaseUrlInput.value);
+    if (normalized) {
+      window.localStorage.setItem(API_BASE_URL_STORAGE_KEY, normalized);
+      apiBaseUrlInput.value = normalized;
+      setStatus(`Đã lưu API Base URL: ${normalized}`, 'success');
+      return;
+    }
+
+    window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY);
+    setStatus('Đã xóa API Base URL đã lưu.', 'neutral');
+  });
+}
+
 window.addEventListener('resize', schedulePedigreeLinkRender);
 
 seedInitialState();
 render();
 syncAlleleControls();
-setStatus('Sẵn sàng. Các đời được đánh số tự động theo bố cục node.', 'neutral');
+if (isGithubPagesHost() && !getApiBaseUrl()) {
+  setStatus('Đang chạy trên GitHub Pages. Hãy nhập API Base URL backend rồi bấm Lưu API.', 'neutral');
+} else {
+  setStatus('Sẵn sàng. Các đời được đánh số tự động theo bố cục node.', 'neutral');
+}

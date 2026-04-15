@@ -233,6 +233,14 @@ select:focus {
   gap: 10px;
 }
 
+.api-control {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.api-control .secondary {
+  white-space: nowrap;
+}
+
 .disabled-field {
   opacity: 0.62;
 }

@@ -11,6 +11,56 @@
 3. Run tests:
    - `pytest`
 
+## Deploy nhanh (khuyến nghị)
+
+Mô hình deploy:
+
+- Backend FastAPI: Render
+- Frontend tĩnh: GitHub Pages
+
+### 1) Deploy backend lên Render
+
+Repo đã có sẵn `render.yaml`.
+
+1. Vào Render, chọn `New +` -> `Blueprint`.
+2. Kết nối repo GitHub này.
+3. Render sẽ đọc `render.yaml` và tạo service `illness-predict-api`.
+4. Sau khi tạo service, vào `Environment` và set:
+   - `CORS_ALLOW_ORIGINS=https://Lgiaba0.github.io`
+5. Deploy và lấy URL backend, ví dụ:
+   - `https://illness-predict-api.onrender.com`
+
+### 2) Deploy frontend lên GitHub Pages
+
+Repo đã có workflow `deploy-pages.yml` để publish thư mục `src/frontend`.
+
+1. Vào GitHub repo -> `Settings` -> `Pages`.
+2. Ở phần `Build and deployment`, chọn `Source: GitHub Actions`.
+3. Push lên nhánh `main` (hoặc chạy workflow thủ công).
+4. Site sẽ có URL dạng:
+   - `https://Lgiaba0.github.io/illness_predict/`
+
+### 3) Nối frontend với backend
+
+1. Mở site GitHub Pages.
+2. Trong UI, nhập `API Base URL` là URL backend Render, ví dụ:
+   - `https://illness-predict-api.onrender.com`
+3. Bấm `Lưu API`.
+4. Chạy thử `Tính rủi ro`.
+
+Lưu ý:
+
+- API Base URL được lưu ở `localStorage` trên trình duyệt của người dùng.
+- Khi chạy local qua FastAPI (`http://127.0.0.1:8000/`), app tự dùng same-origin API.
+
+### 4) Domain GitHub cho người khác truy cập
+
+Không cần mua domain riêng, bạn có thể dùng ngay domain GitHub Pages:
+
+- `https://Lgiaba0.github.io/illness_predict/`
+
+Nếu muốn custom domain riêng (ví dụ `predict.yourdomain.com`), có thể cấu hình thêm trong GitHub Pages.
+
 ## Cấu trúc chính
 
 - `src/api/`: API FastAPI và route inference

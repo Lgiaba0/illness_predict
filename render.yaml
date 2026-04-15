@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: illness-predict-api
+    env: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -e .
+    startCommand: uvicorn src.api.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: MAX_INDIVIDUALS_EXACT
+        value: 18
+      - key: ALLELE_FREQUENCY_DEFAULT
+        value: 0.01
+      - key: CORS_ALLOW_ORIGINS
+        sync: false

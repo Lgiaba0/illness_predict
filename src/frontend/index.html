@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Pedigree Risk Studio</title>
-    <link rel="stylesheet" href="/static/styles.css" />
+    <link rel="stylesheet" href="./static/styles.css" />
   </head>
   <body>
     <div class="shell">
@@ -44,6 +44,13 @@
         </header>
 
         <section class="controls">
+          <label>
+            API Base URL
+            <div class="inline-control api-control">
+              <input id="apiBaseUrl" type="url" placeholder="https://your-backend.onrender.com" />
+              <button id="saveApiBaseUrlBtn" class="secondary" type="button">Lưu API</button>
+            </div>
+          </label>
           <label>
             Kiểu di truyền
             <select id="inheritanceMode">
@@ -157,6 +164,6 @@
       </article>
     </template>
 
-    <script src="/static/app.js"></script>
+    <script src="./static/app.js"></script>
   </body>
 </html>
