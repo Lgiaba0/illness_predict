@@ -10,22 +10,22 @@
     <div class="shell">
       <aside class="hero">
         <div class="brand">Pedigree Risk Studio</div>
-        <h1>Vẽ phả hệ, thêm từng đời, và tính rủi ro di truyền ngay trên web.</h1>
-        <p>
+        <h1 id="heroTitle">Vẽ phả hệ, thêm từng đời, và tính rủi ro di truyền ngay trên web.</h1>
+        <p id="heroDescription">
           Mặc định có người cần xét và các node liên quan. Nhãn đời được đánh số tự động theo bố cục chiều cao của phả hệ,
           bạn có thể bấm thêm đời để nhập ông bà, cô dì, chú bác,
           rồi chạy suy luận autosomal recessive ngay lập tức.
         </p>
         <div class="hero-cards">
           <div class="hero-card">
-            <span class="label">Mặc định</span>
-            <strong>Proband + Father + Mother</strong>
-            <small>Các đời hiển thị theo số thứ tự tự động</small>
+            <span class="label" id="heroCard1Label">Mặc định</span>
+            <strong id="heroCard1Title">Proband + Father + Mother</strong>
+            <small id="heroCard1Description">Các đời hiển thị theo số thứ tự tự động</small>
           </div>
           <div class="hero-card">
-            <span class="label">Mở rộng</span>
-            <strong>+ 1 đời</strong>
-            <small>Thêm ông bà hoặc các node cùng thế hệ</small>
+            <span class="label" id="heroCard2Label">Mở rộng</span>
+            <strong id="heroCard2Title">+ 1 đời</strong>
+            <small id="heroCard2Description">Thêm ông bà hoặc các node cùng thế hệ</small>
           </div>
         </div>
       </aside>
@@ -33,10 +33,17 @@
       <main class="workspace">
         <header class="topbar">
           <div>
-            <h2>Pedigree Builder</h2>
-            <p>Điền thông tin, thêm đời nếu cần, rồi bấm tính xác suất.</p>
+            <h2 id="topbarTitle">Pedigree Builder</h2>
+            <p id="topbarDescription">Điền thông tin, thêm đời nếu cần, rồi bấm tính xác suất.</p>
           </div>
           <div class="actions">
+            <div class="lang-switch">
+              <label id="languageLabel" for="languageSelect">Ngôn ngữ</label>
+              <select id="languageSelect">
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+              </select>
+            </div>
             <button id="addGenerationBtn" class="secondary">+ Thêm 1 đời</button>
             <button id="exampleBtn" class="ghost">Nạp ví dụ</button>
             <button id="inferBtn" class="primary">Tính rủi ro</button>
@@ -45,14 +52,14 @@
 
         <section class="controls">
           <label>
-            API Base URL
+            <span id="apiBaseUrlLabel">API Base URL</span>
             <div class="inline-control api-control">
               <input id="apiBaseUrl" type="url" placeholder="https://your-backend.onrender.com" />
               <button id="saveApiBaseUrlBtn" class="secondary" type="button">Lưu API</button>
             </div>
           </label>
           <label>
-            Kiểu di truyền
+            <span id="inheritanceModeLabel">Kiểu di truyền</span>
             <select id="inheritanceMode">
               <option value="auto" selected>Tự suy ra từ phả hệ</option>
               <option value="recessive">Lặn (recessive)</option>
@@ -60,7 +67,7 @@
             </select>
           </label>
           <label>
-            Allele frequency
+            <span id="alleleFrequencyLabel">Allele frequency</span>
             <div class="inline-control">
               <select id="alleleMode">
                 <option value="preset" selected>preset</option>
@@ -76,11 +83,11 @@
             </div>
           </label>
           <label>
-            Query father
+            <span id="queryFatherLabel">Query father</span>
             <select id="queryFather"></select>
           </label>
           <label>
-            Query mother
+            <span id="queryMotherLabel">Query mother</span>
             <select id="queryMother"></select>
           </label>
         </section>
@@ -89,11 +96,11 @@
 
         <section class="panel pedigree-panel">
           <div class="panel-head">
-            <h3>Phả hệ trực quan</h3>
-            <span>Xem nhanh các đời và quan hệ cha/mẹ-con</span>
+            <h3 id="pedigreePanelTitle">Phả hệ trực quan</h3>
+            <span id="pedigreePanelDescription">Xem nhanh các đời và quan hệ cha/mẹ-con</span>
           </div>
           <div id="pedigreeCanvas" class="pedigree-canvas">
-            <div class="empty-state">Sơ đồ phả hệ sẽ tự cập nhật khi bạn nhập dữ liệu.</div>
+            <div id="pedigreeEmptyState" class="empty-state">Sơ đồ phả hệ sẽ tự cập nhật khi bạn nhập dữ liệu.</div>
           </div>
         </section>
 
@@ -102,17 +109,17 @@
         <section class="results-grid">
           <article class="panel result-panel">
             <div class="panel-head">
-              <h3>Kết quả</h3>
+              <h3 id="resultPanelTitle">Kết quả</h3>
               <span id="resultBadge" class="badge neutral">Chưa chạy</span>
             </div>
             <div id="resultBody" class="result-body">
-              <div class="empty-state">Kết quả sẽ hiển thị ở đây sau khi bạn chạy inference.</div>
+              <div id="resultEmptyState" class="empty-state">Kết quả sẽ hiển thị ở đây sau khi bạn chạy inference.</div>
             </div>
           </article>
 
           <article class="panel payload-panel">
             <div class="panel-head">
-              <h3>Payload gửi API</h3>
+              <h3 id="payloadPanelTitle">Payload gửi API</h3>
               <button id="copyPayloadBtn" class="ghost small">Copy JSON</button>
             </div>
             <pre id="payloadPreview" class="payload-preview">{}</pre>
@@ -142,11 +149,11 @@
           <button class="ghost remove-node-btn" type="button">Xóa</button>
         </div>
         <label>
-          ID
+          <span class="node-id-label">ID</span>
           <input class="node-id" type="text" placeholder="grandfather_paternal" />
         </label>
         <label>
-          Phenotype
+          <span class="node-phenotype-label">Phenotype</span>
           <select class="node-phenotype">
             <option value="unknown">unknown</option>
             <option value="unaffected">unaffected</option>
@@ -154,11 +161,11 @@
           </select>
         </label>
         <label>
-          Father
+          <span class="node-father-label">Father</span>
           <select class="node-father"></select>
         </label>
         <label>
-          Mother
+          <span class="node-mother-label">Mother</span>
           <select class="node-mother"></select>
         </label>
       </article>

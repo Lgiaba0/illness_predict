@@ -14,19 +14,274 @@ const allelePresetSelect = document.getElementById('allelePreset');
 const alleleFrequencyInput = document.getElementById('alleleFrequency');
 const apiBaseUrlInput = document.getElementById('apiBaseUrl');
 const saveApiBaseUrlBtn = document.getElementById('saveApiBaseUrlBtn');
+const languageSelect = document.getElementById('languageSelect');
 const queryFatherSelect = document.getElementById('queryFather');
 const queryMotherSelect = document.getElementById('queryMother');
 const generationTemplate = document.getElementById('generationTemplate');
 const nodeTemplate = document.getElementById('nodeTemplate');
 
 const API_BASE_URL_STORAGE_KEY = 'pedigree.apiBaseUrl';
+const LANGUAGE_STORAGE_KEY = 'pedigree.language';
 
-const state = {
-  generations: []
+const translations = {
+  vi: {
+    pageTitle: 'Pedigree Risk Studio',
+    heroTitle: 'Vẽ phả hệ, thêm từng đời, và tính rủi ro di truyền ngay trên web.',
+    heroDescription:
+      'Mặc định có người cần xét và các node liên quan. Nhãn đời được đánh số tự động theo bố cục chiều cao của phả hệ, bạn có thể bấm thêm đời để nhập ông bà, cô dì, chú bác, rồi chạy suy luận autosomal recessive ngay lập tức.',
+    heroCard1Label: 'Mặc định',
+    heroCard1Title: 'Proband + Father + Mother',
+    heroCard1Description: 'Các đời hiển thị theo số thứ tự tự động',
+    heroCard2Label: 'Mở rộng',
+    heroCard2Title: '+ 1 đời',
+    heroCard2Description: 'Thêm ông bà hoặc các node cùng thế hệ',
+    topbarTitle: 'Pedigree Builder',
+    topbarDescription: 'Điền thông tin, thêm đời nếu cần, rồi bấm tính xác suất.',
+    languageLabel: 'Ngôn ngữ',
+    addGenerationBtn: '+ Thêm 1 đời',
+    exampleBtn: 'Nạp ví dụ',
+    inferBtn: 'Tính rủi ro',
+    apiBaseUrlLabel: 'API Base URL',
+    saveApiBaseUrlBtn: 'Lưu API',
+    inheritanceModeLabel: 'Kiểu di truyền',
+    alleleFrequencyLabel: 'Tần suất allele',
+    queryFatherLabel: 'Cha truy vấn',
+    queryMotherLabel: 'Mẹ truy vấn',
+    pedigreePanelTitle: 'Phả hệ trực quan',
+    pedigreePanelDescription: 'Xem nhanh các đời và quan hệ cha/mẹ-con',
+    resultPanelTitle: 'Kết quả',
+    payloadPanelTitle: 'Payload gửi API',
+    copyPayloadBtn: 'Copy JSON',
+    statusReady: 'Sẵn sàng',
+    statusError: 'Lỗi',
+    statusSuccess: 'Đã tính',
+    statusMessages: {
+      ready: 'Sẵn sàng. Nhập cây gia đình và bấm Tính rủi ro.',
+      exampleLoaded: 'Đã nạp ví dụ. Bạn có thể sửa trực tiếp từng node.',
+      needNode: 'Cần ít nhất một node hợp lệ trước khi chạy.',
+      needApiBaseUrl: 'Hãy nhập API Base URL backend trước khi chạy trên GitHub Pages.',
+      sendingRequest: 'Đang gửi dữ liệu lên API...',
+      inferenceDone: 'Inference hoàn tất.',
+      githubPagesHint: 'Đang chạy trên GitHub Pages. Hãy nhập API Base URL backend rồi bấm Lưu API.',
+      copiedPayload: 'Đã copy payload JSON vào clipboard.',
+      savedApiBaseUrl: (url) => `Đã lưu API Base URL: ${url}`,
+      clearedApiBaseUrl: 'Đã xóa API Base URL đã lưu.',
+      addedGeneration: (label) => `Đã thêm ${label}.`,
+      inferenceFailed: 'Inference failed'
+    },
+    generationPrefix: 'Generation',
+    currentGeneration: 'Current generation',
+    nodePrefix: 'Node',
+    noneOption: 'None',
+    phenotypeAffected: 'Affected',
+    phenotypeUnaffected: 'Unaffected',
+    phenotypeUnknown: 'Unknown',
+    inheritanceAuto: 'Auto infer from pedigree',
+    inheritanceRecessive: 'Recessive',
+    inheritanceDominant: 'Dominant',
+    allelePreset: 'preset',
+    alleleCustom: 'custom',
+    alleleUnknown: 'unknown',
+    alleleRare: 'rare (q=0.01)',
+    alleleModerate: 'moderate (q=0.05)',
+    alleleCommon: 'common (q=0.1)',
+    modelRecessive: 'Recessive',
+    modelDominant: 'Dominant',
+    childProbability: 'Probability child affected',
+    exploredStates: 'Explored states',
+    modelInferred: 'Inferred model',
+    modelFit: 'Model fit (auto)',
+    genotype: 'Genotype',
+    person: 'Person',
+    posteriorDetails: 'Posterior details',
+    addNodeBtn: '+ Add node in this generation',
+    removeGenerationBtn: 'Remove generation',
+    removeNodeBtn: 'Remove',
+    nodeIdLabel: 'ID',
+    nodePhenotypeLabel: 'Phenotype',
+    nodeFatherLabel: 'Father',
+    nodeMotherLabel: 'Mother',
+    nodeIdPlaceholder: 'grandfather_paternal',
+    pedigreeEmptyState: 'Pedigree diagram will update automatically as you enter data.',
+    resultEmptyState: 'Results will appear here after you run inference.',
+    emptyPedigree: 'No pedigree data yet.'
+  },
+  en: {
+    pageTitle: 'Pedigree Risk Studio',
+    heroTitle: 'Draw pedigrees, add generations, and calculate genetic risk in the browser.',
+    heroDescription:
+      'The app starts with the core relatives and auto-numbered generations. Add grandparents, aunts, or uncles as needed, then run autosomal-recessive inference instantly.',
+    heroCard1Label: 'Default',
+    heroCard1Title: 'Proband + Father + Mother',
+    heroCard1Description: 'Generations are labeled automatically',
+    heroCard2Label: 'Expanded',
+    heroCard2Title: '+ 1 generation',
+    heroCard2Description: 'Add grandparents or same-generation relatives',
+    topbarTitle: 'Pedigree Builder',
+    topbarDescription: 'Fill in the tree, add generations if needed, then compute risk.',
+    languageLabel: 'Language',
+    addGenerationBtn: '+ Add generation',
+    exampleBtn: 'Load example',
+    inferBtn: 'Calculate risk',
+    apiBaseUrlLabel: 'API Base URL',
+    saveApiBaseUrlBtn: 'Save API',
+    inheritanceModeLabel: 'Inheritance mode',
+    alleleFrequencyLabel: 'Allele frequency',
+    queryFatherLabel: 'Query father',
+    queryMotherLabel: 'Query mother',
+    pedigreePanelTitle: 'Pedigree view',
+    pedigreePanelDescription: 'Quick view of generations and parent-child links',
+    resultPanelTitle: 'Results',
+    payloadPanelTitle: 'API payload',
+    copyPayloadBtn: 'Copy JSON',
+    statusReady: 'Ready',
+    statusError: 'Error',
+    statusSuccess: 'Done',
+    statusMessages: {
+      ready: 'Ready. Enter a pedigree and click Calculate risk.',
+      exampleLoaded: 'Example loaded. You can edit each node directly.',
+      needNode: 'At least one valid node is required before running inference.',
+      needApiBaseUrl: 'Enter the backend API Base URL before running on GitHub Pages.',
+      sendingRequest: 'Sending data to the API...',
+      inferenceDone: 'Inference completed.',
+      githubPagesHint: 'Running on GitHub Pages. Enter the backend API Base URL and click Save API.',
+      copiedPayload: 'Copied payload JSON to clipboard.',
+      savedApiBaseUrl: (url) => `Saved API Base URL: ${url}`,
+      clearedApiBaseUrl: 'Cleared saved API Base URL.',
+      addedGeneration: (label) => `Added ${label}.`,
+      inferenceFailed: 'Inference failed'
+    },
+    generationPrefix: 'Generation',
+    currentGeneration: 'Current generation',
+    nodePrefix: 'Node',
+    noneOption: 'None',
+    phenotypeAffected: 'Affected',
+    phenotypeUnaffected: 'Unaffected',
+    phenotypeUnknown: 'Unknown',
+    inheritanceAuto: 'Auto infer from pedigree',
+    inheritanceRecessive: 'Recessive',
+    inheritanceDominant: 'Dominant',
+    allelePreset: 'preset',
+    alleleCustom: 'custom',
+    alleleUnknown: 'unknown',
+    alleleRare: 'rare (q=0.01)',
+    alleleModerate: 'moderate (q=0.05)',
+    alleleCommon: 'common (q=0.1)',
+    modelRecessive: 'Recessive',
+    modelDominant: 'Dominant',
+    childProbability: 'Probability child affected',
+    exploredStates: 'Explored states',
+    modelInferred: 'Inferred model',
+    modelFit: 'Model fit (auto)',
+    genotype: 'Genotype',
+    person: 'Person',
+    posteriorDetails: 'Posterior details',
+    addNodeBtn: '+ Add node in this generation',
+    removeGenerationBtn: 'Remove generation',
+    removeNodeBtn: 'Remove',
+    nodeIdLabel: 'ID',
+    nodePhenotypeLabel: 'Phenotype',
+    nodeFatherLabel: 'Father',
+    nodeMotherLabel: 'Mother',
+    nodeIdPlaceholder: 'grandfather_paternal',
+    pedigreeEmptyState: 'Pedigree diagram will update automatically as you enter data.',
+    resultEmptyState: 'Results will appear here after you run inference.',
+    emptyPedigree: 'No pedigree data yet.'
+  }
 };
 
+let currentLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'vi';
+
+function t(path, vars = {}) {
+  const source = translations[currentLanguage] || translations.vi;
+  const value = path.split('.').reduce((accumulator, key) => accumulator?.[key], source);
+  if (typeof value === 'function') {
+    return value(vars.url ?? vars.label ?? vars.value ?? '');
+  }
+  if (typeof value === 'string') {
+    return value.replace(/\{(\w+)\}/g, (_, key) => String(vars[key] ?? ''));
+  }
+  return path;
+}
+
+function setLanguage(lang) {
+  currentLanguage = lang === 'en' ? 'en' : 'vi';
+  window.localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
+  document.documentElement.lang = currentLanguage;
+  if (languageSelect && languageSelect.value !== currentLanguage) {
+    languageSelect.value = currentLanguage;
+  }
+}
+
+function applyLanguage() {
+  setLanguage(currentLanguage);
+  document.title = t('pageTitle');
+
+  document.getElementById('heroTitle').textContent = t('heroTitle');
+  document.getElementById('heroDescription').textContent = t('heroDescription');
+  document.getElementById('heroCard1Label').textContent = t('heroCard1Label');
+  document.getElementById('heroCard1Title').textContent = t('heroCard1Title');
+  document.getElementById('heroCard1Description').textContent = t('heroCard1Description');
+  document.getElementById('heroCard2Label').textContent = t('heroCard2Label');
+  document.getElementById('heroCard2Title').textContent = t('heroCard2Title');
+  document.getElementById('heroCard2Description').textContent = t('heroCard2Description');
+  document.getElementById('topbarTitle').textContent = t('topbarTitle');
+  document.getElementById('topbarDescription').textContent = t('topbarDescription');
+  document.getElementById('languageLabel').textContent = t('languageLabel');
+  document.getElementById('apiBaseUrlLabel').textContent = t('apiBaseUrlLabel');
+  document.getElementById('inheritanceModeLabel').textContent = t('inheritanceModeLabel');
+  document.getElementById('alleleFrequencyLabel').textContent = t('alleleFrequencyLabel');
+  document.getElementById('queryFatherLabel').textContent = t('queryFatherLabel');
+  document.getElementById('queryMotherLabel').textContent = t('queryMotherLabel');
+  document.getElementById('pedigreePanelTitle').textContent = t('pedigreePanelTitle');
+  document.getElementById('pedigreePanelDescription').textContent = t('pedigreePanelDescription');
+  document.getElementById('resultPanelTitle').textContent = t('resultPanelTitle');
+  document.getElementById('payloadPanelTitle').textContent = t('payloadPanelTitle');
+  document.getElementById('saveApiBaseUrlBtn').textContent = t('saveApiBaseUrlBtn');
+  document.getElementById('addGenerationBtn').textContent = t('addGenerationBtn');
+  document.getElementById('exampleBtn').textContent = t('exampleBtn');
+  document.getElementById('inferBtn').textContent = t('inferBtn');
+  document.getElementById('copyPayloadBtn').textContent = t('copyPayloadBtn');
+
+  const pedigreeEmptyState = document.getElementById('pedigreeEmptyState');
+  if (pedigreeEmptyState) {
+    pedigreeEmptyState.textContent = t('pedigreeEmptyState');
+  }
+  const resultEmptyState = document.getElementById('resultEmptyState');
+  if (resultEmptyState) {
+    resultEmptyState.textContent = t('resultEmptyState');
+  }
+
+  inheritanceModeSelect.options[0].textContent = t('inheritanceAuto');
+  inheritanceModeSelect.options[1].textContent = t('inheritanceRecessive');
+  inheritanceModeSelect.options[2].textContent = t('inheritanceDominant');
+  alleleModeSelect.options[0].textContent = t('allelePreset');
+  alleleModeSelect.options[1].textContent = t('alleleCustom');
+  alleleModeSelect.options[2].textContent = t('alleleUnknown');
+  allelePresetSelect.options[0].textContent = t('alleleRare');
+  allelePresetSelect.options[1].textContent = t('alleleModerate');
+  allelePresetSelect.options[2].textContent = t('alleleCommon');
+
+  if (languageSelect) {
+    languageSelect.options[0].textContent = currentLanguage === 'vi' ? 'Tiếng Việt' : 'Vietnamese';
+    languageSelect.options[1].textContent = 'English';
+  }
+
+  render();
+
+  if (lastResultData) {
+    renderResult(lastResultData);
+  } else if (isGithubPagesHost() && !getApiBaseUrl()) {
+    setStatus(t('statusMessages.githubPagesHint'), 'neutral');
+  } else {
+    setStatus(t('statusMessages.ready'), 'neutral');
+  }
+}
+
+const state = { generations: [] };
 let pedigreeRafHandle = null;
 let pedigreeLevels = new Map();
+let lastResultData = null;
 
 function createNodeDefaults(generationIndex, nodeIndex) {
   const isRoot = generationIndex === 0;
@@ -51,15 +306,12 @@ function createGeneration(label, nodes) {
 function getLevelOrderMap(levels) {
   const uniqueLevels = [...new Set(levels.values())].sort((a, b) => a - b);
   const orderMap = new Map();
-  uniqueLevels.forEach((level, index) => {
-    orderMap.set(level, index + 1);
-  });
+  uniqueLevels.forEach((level, index) => orderMap.set(level, index + 1));
   return orderMap;
 }
 
 function normalizeGenerationLabelsFromVisual(levels) {
   const levelOrderMap = getLevelOrderMap(levels);
-
   state.generations.forEach((generation, index) => {
     const levelCounts = new Map();
     generation.nodes.forEach((node) => {
@@ -72,36 +324,21 @@ function normalizeGenerationLabelsFromVisual(levels) {
     });
 
     if (!levelCounts.size) {
-      generation.label = `Đời ${index + 1}`;
+      generation.label = `${t('generationPrefix')} ${index + 1}`;
       return;
     }
 
     const dominantLevel = [...levelCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
-    generation.label = `Đời ${levelOrderMap.get(dominantLevel)}`;
+    generation.label = `${t('generationPrefix')} ${levelOrderMap.get(dominantLevel)}`;
   });
-}
-
-function syncGenerationViews() {
-  const visual = buildVisualPedigree();
-  pedigreeLevels = visual.levels;
-  normalizeGenerationLabelsFromVisual(visual.levels);
-
-  const titles = generationsEl.querySelectorAll('.generation-title');
-  state.generations.forEach((generation, index) => {
-    if (titles[index]) {
-      titles[index].textContent = generation.label;
-    }
-  });
-
-  renderPedigreeView(visual);
 }
 
 function seedInitialState() {
   state.generations = [
-    createGeneration('Đời hiện tại', [
+    createGeneration(t('currentGeneration'), [
       { id: 'proband', phenotype: 'unknown', father_id: 'father', mother_id: 'mother' }
     ]),
-    createGeneration('Đời 2', [
+    createGeneration(`${t('generationPrefix')} 2`, [
       { id: 'father', phenotype: 'unaffected', father_id: null, mother_id: null },
       { id: 'mother', phenotype: 'unaffected', father_id: null, mother_id: null }
     ])
@@ -110,16 +347,12 @@ function seedInitialState() {
 
 function allNodes() {
   return state.generations.flatMap((generation, generationIndex) =>
-    generation.nodes.map((node, nodeIndex) => ({
-      ...node,
-      generationIndex,
-      nodeIndex
-    }))
+    generation.nodes.map((node, nodeIndex) => ({ ...node, generationIndex, nodeIndex }))
   );
 }
 
 function nodeOptions(selectedValue = '') {
-  const options = [{ value: '', label: 'None' }];
+  const options = [{ value: '', label: t('noneOption') }];
   for (const node of allNodes()) {
     options.push({ value: node.id, label: node.id });
   }
@@ -204,18 +437,13 @@ function buildVisualPedigree() {
 
   const generations = Array.from(grouped.entries())
     .sort((a, b) => a[0] - b[0])
-    .map(([level, levelNodes], index) => ({
-      key: level,
-      label: `Đời ${index + 1}`,
-      nodes: levelNodes
-    }));
+    .map(([level, levelNodes], index) => ({ key: level, label: `${t('generationPrefix')} ${index + 1}`, nodes: levelNodes }));
 
   return { nodes, levels: levelMemo, generations };
 }
 
 function renderPedigreeLinks(container, linksSvg) {
   linksSvg.innerHTML = '';
-
   const containerRect = container.getBoundingClientRect();
   if (containerRect.width === 0 || containerRect.height === 0) {
     return;
@@ -237,41 +465,41 @@ function renderPedigreeLinks(container, linksSvg) {
   linkGroup.setAttribute('class', 'pedigree-link-group');
 
   for (const child of allNodes()) {
-      const childId = child.id.trim();
-      if (!childId || !nodeMap.has(childId)) {
-        continue;
+    const childId = child.id.trim();
+    if (!childId || !nodeMap.has(childId)) {
+      continue;
+    }
+
+    const childElement = nodeMap.get(childId);
+    const childRect = childElement.getBoundingClientRect();
+    const childTopX = childRect.left - containerRect.left + childRect.width / 2;
+    const childTopY = childRect.top - containerRect.top;
+
+    [child.father_id, child.mother_id].forEach((parentId, index) => {
+      if (!parentId || !nodeMap.has(parentId)) {
+        return;
       }
 
-      const childElement = nodeMap.get(childId);
-      const childRect = childElement.getBoundingClientRect();
-      const childTopX = childRect.left - containerRect.left + childRect.width / 2;
-      const childTopY = childRect.top - containerRect.top;
+      const childLevel = pedigreeLevels.get(childId);
+      const parentLevel = pedigreeLevels.get(parentId);
+      if (typeof childLevel === 'number' && typeof parentLevel === 'number' && parentLevel >= childLevel) {
+        return;
+      }
 
-      [child.father_id, child.mother_id].forEach((parentId, index) => {
-        if (!parentId || !nodeMap.has(parentId)) {
-          return;
-        }
+      const parentElement = nodeMap.get(parentId);
+      const parentRect = parentElement.getBoundingClientRect();
+      const parentBottomX = parentRect.left - containerRect.left + parentRect.width / 2;
+      const parentBottomY = parentRect.bottom - containerRect.top;
+      const bendY = parentBottomY + (childTopY - parentBottomY) * 0.5 - 8;
 
-        const childLevel = pedigreeLevels.get(childId);
-        const parentLevel = pedigreeLevels.get(parentId);
-        if (typeof childLevel === 'number' && typeof parentLevel === 'number' && parentLevel >= childLevel) {
-          return;
-        }
-
-        const parentElement = nodeMap.get(parentId);
-        const parentRect = parentElement.getBoundingClientRect();
-        const parentBottomX = parentRect.left - containerRect.left + parentRect.width / 2;
-        const parentBottomY = parentRect.bottom - containerRect.top;
-        const bendY = parentBottomY + (childTopY - parentBottomY) * 0.5 - 8;
-
-        const path = createSvgElement('path');
-        path.setAttribute(
-          'd',
-          `M ${parentBottomX} ${parentBottomY} L ${parentBottomX} ${bendY} L ${childTopX + (index === 0 ? -6 : 6)} ${bendY} L ${childTopX + (index === 0 ? -6 : 6)} ${childTopY}`
-        );
-        path.setAttribute('class', `pedigree-link ${index === 0 ? 'father-link' : 'mother-link'}`);
-        linkGroup.appendChild(path);
-      });
+      const path = createSvgElement('path');
+      path.setAttribute(
+        'd',
+        `M ${parentBottomX} ${parentBottomY} L ${parentBottomX} ${bendY} L ${childTopX + (index === 0 ? -6 : 6)} ${bendY} L ${childTopX + (index === 0 ? -6 : 6)} ${childTopY}`
+      );
+      path.setAttribute('class', `pedigree-link ${index === 0 ? 'father-link' : 'mother-link'}`);
+      linkGroup.appendChild(path);
+    });
   }
 
   linksSvg.appendChild(linkGroup);
@@ -306,12 +534,11 @@ function renderPedigreeView(visualData = null) {
   pedigreeLevels = visual.levels;
 
   if (!visual.nodes.length) {
-    pedigreeCanvas.innerHTML = '<div class="empty-state">Chưa có dữ liệu phả hệ.</div>';
+    pedigreeCanvas.innerHTML = `<div id="pedigreeEmptyState" class="empty-state">${t('emptyPedigree')}</div>`;
     return;
   }
 
   pedigreeCanvas.innerHTML = '';
-
   const layout = document.createElement('div');
   layout.className = 'pedigree-layout';
 
@@ -341,12 +568,7 @@ function renderPedigreeView(visualData = null) {
 
       const meta = document.createElement('span');
       meta.className = 'pedigree-node-meta';
-      meta.textContent =
-        node.phenotype === 'affected'
-          ? 'Bệnh'
-          : node.phenotype === 'unaffected'
-          ? 'Không bệnh'
-          : 'Chưa rõ';
+      meta.textContent = node.phenotype === 'affected' ? t('phenotypeAffected') : node.phenotype === 'unaffected' ? t('phenotypeUnaffected') : t('phenotypeUnknown');
 
       card.appendChild(id);
       card.appendChild(meta);
@@ -375,29 +597,41 @@ function render() {
 
   state.generations.forEach((generation, generationIndex) => {
     const fragment = generationTemplate.content.cloneNode(true);
-    const card = fragment.querySelector('.generation-card');
     const title = fragment.querySelector('.generation-title');
     const nodeList = fragment.querySelector('.node-list');
     const addNodeBtn = fragment.querySelector('.add-node-btn');
     const removeGenerationBtn = fragment.querySelector('.remove-generation-btn');
+    const generationKicker = fragment.querySelector('.generation-kicker');
 
     title.textContent = generation.label;
+    generationKicker.textContent = t('generationPrefix');
+    addNodeBtn.textContent = t('addNodeBtn');
+    removeGenerationBtn.textContent = t('removeGenerationBtn');
 
     generation.nodes.forEach((node, nodeIndex) => {
       const nodeFragment = nodeTemplate.content.cloneNode(true);
-      const nodeCard = nodeFragment.querySelector('.node-card');
       const indexEl = nodeFragment.querySelector('.node-index');
       const idInput = nodeFragment.querySelector('.node-id');
       const phenotypeSelect = nodeFragment.querySelector('.node-phenotype');
       const fatherSelect = nodeFragment.querySelector('.node-father');
       const motherSelect = nodeFragment.querySelector('.node-mother');
       const removeNodeBtn = nodeFragment.querySelector('.remove-node-btn');
+      const nodeIdLabel = nodeFragment.querySelector('.node-id-label');
+      const nodePhenotypeLabel = nodeFragment.querySelector('.node-phenotype-label');
+      const nodeFatherLabel = nodeFragment.querySelector('.node-father-label');
+      const nodeMotherLabel = nodeFragment.querySelector('.node-mother-label');
 
-      indexEl.textContent = node.id || `Node ${nodeIndex + 1}`;
+      indexEl.textContent = node.id || `${t('nodePrefix')} ${nodeIndex + 1}`;
       idInput.value = node.id;
+      idInput.placeholder = t('nodeIdPlaceholder');
       phenotypeSelect.value = node.phenotype;
       fatherSelect.innerHTML = nodeOptions(node.father_id);
       motherSelect.innerHTML = nodeOptions(node.mother_id);
+      removeNodeBtn.textContent = t('removeNodeBtn');
+      nodeIdLabel.textContent = t('nodeIdLabel');
+      nodePhenotypeLabel.textContent = t('nodePhenotypeLabel');
+      nodeFatherLabel.textContent = t('nodeFatherLabel');
+      nodeMotherLabel.textContent = t('nodeMotherLabel');
 
       const updateOptions = () => {
         fatherSelect.innerHTML = nodeOptions(node.father_id);
@@ -410,22 +644,14 @@ function render() {
         if (previousId && previousId !== node.id) {
           for (const generationItem of state.generations) {
             for (const sibling of generationItem.nodes) {
-              if (sibling.father_id === previousId) {
-                sibling.father_id = node.id || null;
-              }
-              if (sibling.mother_id === previousId) {
-                sibling.mother_id = node.id || null;
-              }
+              if (sibling.father_id === previousId) sibling.father_id = node.id || null;
+              if (sibling.mother_id === previousId) sibling.mother_id = node.id || null;
             }
           }
-          if (queryFatherSelect.value === previousId) {
-            queryFatherSelect.value = node.id;
-          }
-          if (queryMotherSelect.value === previousId) {
-            queryMotherSelect.value = node.id;
-          }
+          if (queryFatherSelect.value === previousId) queryFatherSelect.value = node.id;
+          if (queryMotherSelect.value === previousId) queryMotherSelect.value = node.id;
         }
-        indexEl.textContent = node.id || `Node ${nodeIndex + 1}`;
+        indexEl.textContent = node.id || `${t('nodePrefix')} ${nodeIndex + 1}`;
         syncQuerySelectors();
         updateOptions();
         renderPayloadPreview();
@@ -507,12 +733,14 @@ function buildPayload() {
       father_id: queryFatherSelect.value,
       mother_id: queryMotherSelect.value,
       inheritance_mode: inheritanceModeSelect.value,
-      allele_frequency: 
-        alleleModeSelect.value === 'unknown' 
-          ? null 
+      allele_frequency:
+        alleleModeSelect.value === 'unknown'
+          ? null
           : alleleModeSelect.value === 'preset'
-          ? Number(allelePresetSelect.value)
-          : alleleFrequencyInput.value ? Number(alleleFrequencyInput.value) : null
+            ? Number(allelePresetSelect.value)
+            : alleleFrequencyInput.value
+              ? Number(alleleFrequencyInput.value)
+              : null
     }
   };
 }
@@ -544,7 +772,6 @@ function inferEndpoint() {
   return base ? `${base}/v1/infer` : '/v1/infer';
 }
 
-
 function renderPayloadPreview() {
   payloadPreview.textContent = JSON.stringify(buildPayload(), null, 2);
 }
@@ -558,56 +785,45 @@ function syncAlleleControls() {
 function setStatus(message, kind = 'neutral') {
   statusBar.textContent = message;
   resultBadge.className = `badge ${kind}`;
-  resultBadge.textContent = kind === 'success' ? 'Đã tính' : kind === 'error' ? 'Lỗi' : 'Sẵn sàng';
+  resultBadge.textContent = kind === 'success' ? t('statusSuccess') : kind === 'error' ? t('statusError') : t('statusReady');
 }
 
 function renderResult(data) {
+  lastResultData = data;
   const childProbability = (data.child_affected_probability * 100).toFixed(2);
   const fatherId = data.parent_marginals ? Object.keys(data.parent_marginals)[0] : 'father';
   const motherId = data.parent_marginals ? Object.keys(data.parent_marginals)[1] : 'mother';
   const fatherPosterior = data.parent_marginals?.[fatherId] || {};
   const motherPosterior = data.parent_marginals?.[motherId] || {};
-
   const selectedMode = data.inheritance_mode || 'recessive';
-  const modeLabel = selectedMode === 'dominant' ? 'Trội' : 'Lặn';
+  const modeLabel = selectedMode === 'dominant' ? t('modelDominant') : t('modelRecessive');
   const recessiveScore = (Number(data.model_scores?.recessive || 0) * 100).toFixed(1);
   const dominantScore = (Number(data.model_scores?.dominant || 0) * 100).toFixed(1);
-
-  const toRows = (posterior) =>
-    ['AA', 'Aa', 'aa']
-      .map(
-        (genotype) => `
-          <tr>
-            <td>${genotype}</td>
-            <td>${((posterior[genotype] || 0) * 100).toFixed(2)}%</td>
-          </tr>`
-      )
-      .join('');
 
   resultBody.innerHTML = `
     <div class="result-grid">
       <div class="metric">
-        <div class="metric-label">Xác suất con bị bệnh</div>
+        <div class="metric-label">${t('childProbability')}</div>
         <div class="metric-value">${childProbability}%</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Số trạng thái đã duyệt</div>
+        <div class="metric-label">${t('exploredStates')}</div>
         <div class="metric-value">${data.metadata?.explored_states ?? 0}</div>
       </div>
       <div class="metric">
-        <div class="metric-label">Mô hình suy ra</div>
+        <div class="metric-label">${t('modelInferred')}</div>
         <div class="metric-value">${modeLabel}</div>
       </div>
     </div>
 
     <div class="metric">
-      <div class="metric-label">Độ phù hợp mô hình (auto)</div>
-      <div class="metric-label">Recessive: ${recessiveScore}% | Dominant: ${dominantScore}%</div>
+      <div class="metric-label">${t('modelFit')}</div>
+      <div class="metric-label">${t('modelRecessive')}: ${recessiveScore}% | ${t('modelDominant')}: ${dominantScore}%</div>
     </div>
 
     <table class="posterior-table">
       <thead>
-        <tr><th>Genotype</th><th>${fatherId}</th><th>${motherId}</th></tr>
+        <tr><th>${t('genotype')}</th><th>${fatherId}</th><th>${motherId}</th></tr>
       </thead>
       <tbody>
         <tr><td>AA</td><td>${((fatherPosterior.AA || 0) * 100).toFixed(2)}%</td><td>${((motherPosterior.AA || 0) * 100).toFixed(2)}%</td></tr>
@@ -616,10 +832,10 @@ function renderResult(data) {
       </tbody>
     </table>
 
-    <h4>Posterior chi tiết</h4>
+    <h4>${t('posteriorDetails')}</h4>
     <table class="posterior-table">
       <thead>
-        <tr><th>Người</th><th>AA</th><th>Aa</th><th>aa</th></tr>
+        <tr><th>${t('person')}</th><th>AA</th><th>Aa</th><th>aa</th></tr>
       </thead>
       <tbody>
         ${Object.entries(data.genotype_posteriors || {})
@@ -640,14 +856,14 @@ function renderResult(data) {
 
 function loadExample() {
   state.generations = [
-    createGeneration('Đời hiện tại', [
+    createGeneration(t('currentGeneration'), [
       { id: 'proband', phenotype: 'affected', father_id: 'father', mother_id: 'mother' }
     ]),
-    createGeneration('Đời 2', [
+    createGeneration(`${t('generationPrefix')} 2`, [
       { id: 'father', phenotype: 'unaffected', father_id: 'grandfather_p', mother_id: 'grandmother_p' },
       { id: 'mother', phenotype: 'unaffected', father_id: 'grandfather_m', mother_id: 'grandmother_m' }
     ]),
-    createGeneration('Đời 3', [
+    createGeneration(`${t('generationPrefix')} 3`, [
       { id: 'grandfather_p', phenotype: 'unknown', father_id: null, mother_id: null },
       { id: 'grandmother_p', phenotype: 'unknown', father_id: null, mother_id: null },
       { id: 'grandfather_m', phenotype: 'unknown', father_id: null, mother_id: null },
@@ -657,7 +873,7 @@ function loadExample() {
 
   syncQuerySelectors();
   render();
-  setStatus('Đã nạp ví dụ. Bạn có thể sửa trực tiếp từng node.', 'neutral');
+  setStatus(t('statusMessages.exampleLoaded'), 'neutral');
 }
 
 async function infer() {
@@ -665,16 +881,16 @@ async function infer() {
   payloadPreview.textContent = JSON.stringify(payload, null, 2);
 
   if (!payload.individuals.length) {
-    setStatus('Cần ít nhất một node hợp lệ trước khi chạy.', 'error');
+    setStatus(t('statusMessages.needNode'), 'error');
     return;
   }
 
   if (isGithubPagesHost() && !getApiBaseUrl()) {
-    setStatus('Hãy nhập API Base URL backend trước khi chạy trên GitHub Pages.', 'error');
+    setStatus(t('statusMessages.needApiBaseUrl'), 'error');
     return;
   }
 
-  setStatus('Đang gửi dữ liệu lên API...', 'neutral');
+  setStatus(t('statusMessages.sendingRequest'), 'neutral');
   inferBtn.disabled = true;
 
   try {
@@ -685,14 +901,13 @@ async function infer() {
     });
 
     const data = await response.json();
-
     if (!response.ok) {
-      const message = typeof data?.detail === 'string' ? data.detail : 'Inference failed';
+      const message = typeof data?.detail === 'string' ? data.detail : t('statusMessages.inferenceFailed');
       throw new Error(message);
     }
 
     renderResult(data);
-    setStatus('Inference hoàn tất.', 'success');
+    setStatus(t('statusMessages.inferenceDone'), 'success');
   } catch (error) {
     resultBody.innerHTML = `<div class="empty-state">${error.message}</div>`;
     setStatus(error.message, 'error');
@@ -706,14 +921,14 @@ addGenerationBtn.addEventListener('click', () => {
   const placeholders = [0, 1, 2, 3].map((nodeIndex) => createNodeDefaults(generationIndex, nodeIndex));
   state.generations.push(createGeneration('', placeholders));
   render();
-  setStatus(`Đã thêm ${state.generations[state.generations.length - 1].label}.`, 'neutral');
+  setStatus(t('statusMessages.addedGeneration', { label: state.generations[state.generations.length - 1].label }), 'neutral');
 });
 
 inferBtn.addEventListener('click', infer);
 exampleBtn.addEventListener('click', loadExample);
 copyPayloadBtn.addEventListener('click', async () => {
   await navigator.clipboard.writeText(payloadPreview.textContent);
-  setStatus('Đã copy payload JSON vào clipboard.', 'success');
+  setStatus(t('statusMessages.copiedPayload'), 'success');
 });
 
 alleleFrequencyInput.addEventListener('input', renderPayloadPreview);
@@ -725,6 +940,14 @@ alleleModeSelect.addEventListener('change', () => {
 inheritanceModeSelect.addEventListener('change', renderPayloadPreview);
 queryFatherSelect.addEventListener('change', renderPayloadPreview);
 queryMotherSelect.addEventListener('change', renderPayloadPreview);
+
+if (languageSelect) {
+  languageSelect.value = currentLanguage;
+  languageSelect.addEventListener('change', () => {
+    setLanguage(languageSelect.value);
+    applyLanguage();
+  });
+}
 
 if (apiBaseUrlInput && saveApiBaseUrlBtn) {
   const savedApiBase = normalizeApiBaseUrl(window.localStorage.getItem(API_BASE_URL_STORAGE_KEY));
@@ -739,22 +962,17 @@ if (apiBaseUrlInput && saveApiBaseUrlBtn) {
     if (normalized) {
       window.localStorage.setItem(API_BASE_URL_STORAGE_KEY, normalized);
       apiBaseUrlInput.value = normalized;
-      setStatus(`Đã lưu API Base URL: ${normalized}`, 'success');
+      setStatus(t('statusMessages.savedApiBaseUrl', { url: normalized }), 'success');
       return;
     }
 
     window.localStorage.removeItem(API_BASE_URL_STORAGE_KEY);
-    setStatus('Đã xóa API Base URL đã lưu.', 'neutral');
+    setStatus(t('statusMessages.clearedApiBaseUrl'), 'neutral');
   });
 }
 
 window.addEventListener('resize', schedulePedigreeLinkRender);
 
 seedInitialState();
-render();
+applyLanguage();
 syncAlleleControls();
-if (isGithubPagesHost() && !getApiBaseUrl()) {
-  setStatus('Đang chạy trên GitHub Pages. Hãy nhập API Base URL backend rồi bấm Lưu API.', 'neutral');
-} else {
-  setStatus('Sẵn sàng. Các đời được đánh số tự động theo bố cục node.', 'neutral');
-}
